@@ -30,7 +30,7 @@ profiles:
   meeting:
     selection:
       mode: "resolution_balanced"
-      per_resolution_tier: 1
+      per_resolution_tier: 7
     tunes: ["VQ", "PSNR", "SSIM", "MS_SSIM", "VMAF"]
     presets: [1, 10]
     crfs: [18, 26, 35, 44, 52, 60]
