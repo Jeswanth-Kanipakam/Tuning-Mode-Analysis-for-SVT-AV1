@@ -1,5 +1,5 @@
 profile,resolution_tier,preset,mean_encoding_time_s
-meeting,2160p_or_higher,1,236.7475168
-meeting,2160p_or_higher,10,6.1225863333333335
+meeting,2160p_or_higher,1,589.7287345944444
+meeting,2160p_or_higher,10,14.227440833333334
 meeting,720p_or_lower,1,11.407778652380953
 meeting,720p_or_lower,10,0.33078130476190476
