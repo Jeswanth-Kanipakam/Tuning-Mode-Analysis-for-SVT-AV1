@@ -40,8 +40,8 @@ profiles:
 
   confidence:
     selection:
-      mode: "prefer_1080p"
-      max_videos: 1
+      mode: "all"
+      max_videos: 9
     tunes: ["PSNR"]
     presets: [1, 10]
     crfs: [26, 35, 44]

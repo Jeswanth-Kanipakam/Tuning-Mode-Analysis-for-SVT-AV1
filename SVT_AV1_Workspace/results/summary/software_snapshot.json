@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-09-24T08:08:30.571749+00:00",
+  "timestamp_utc": "2026-09-24T09:58:29.528181+00:00",
   "platform": "Linux-5.14.0-737.el9.x86_64-x86_64-with-glibc2.34",
   "machine": "x86_64",
   "cpu_count_logical": 6,
@@ -95,8 +95,8 @@
       },
       "confidence": {
         "selection": {
-          "mode": "prefer_1080p",
-          "max_videos": 1
+          "mode": "all",
+          "max_videos": 9
         },
         "tunes": [
           "PSNR"
@@ -143,5 +143,5 @@
       }
     }
   },
-  "git_commit": "8ca34e46533d5a65c3035fa5c6d82b876f0af202"
+  "git_commit": "baaec3699dd767b9346a8813ba6cacc9d6abc982"
 }
