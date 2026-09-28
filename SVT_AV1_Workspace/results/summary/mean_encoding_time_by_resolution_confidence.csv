@@ -1,5 +1,7 @@
 profile,resolution_tier,preset,mean_encoding_time_s
-confidence,2160p_or_higher,1,544.8072462
-confidence,2160p_or_higher,10,12.122697755555555
-confidence,720p_or_lower,1,10.075293038095237
-confidence,720p_or_lower,10,0.3097649333333333
+confidence,1080p,1,42.124445333333334
+confidence,1080p,10,1.6678583333333334
+confidence,2160p_or_higher,1,530.7429049904762
+confidence,2160p_or_higher,10,11.936434638095237
+confidence,720p_or_lower,1,12.203597349999999
+confidence,720p_or_lower,10,0.34422946666666665
