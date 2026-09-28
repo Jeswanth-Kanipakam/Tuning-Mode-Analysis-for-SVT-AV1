@@ -1,0 +1,7 @@
+profile,resolution_tier,preset,mean_encoding_time_s
+full,1080p,1,72.50117107333332
+full,1080p,10,1.6997187933333333
+full,2160p_or_higher,1,961.2258633333333
+full,2160p_or_higher,10,29.398138741666667
+full,720p_or_lower,1,35.315407541666666
+full,720p_or_lower,10,0.8410667416666667
