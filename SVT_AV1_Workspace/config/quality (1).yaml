@@ -1,0 +1,40 @@
+tools:
+  ffmpeg: ffmpeg          # must be built with --enable-libvmaf and an AV1 decoder (libdav1d / libaom)
+  ffprobe: ffprobe
+
+inputs:
+  encoding_runs: results/raw/encoding_runs.csv    # produced by WP1
+
+measurement:
+  resume: true
+
+metrics:
+  features: [psnr, float_ssim, float_ms_ssim]    # VMAF itself is always computed
+  vmaf_model: vmaf_v0.6.1
+  vmaf_model_4k: vmaf_4k_v0.6.1                  # used for the 2160p_or_higher tier
+  pix_fmt: ref                                   # "ref" = convert both streams to the reference's pixel format
+  scale_flags: bicubic                           # filter used if dist resolution != ref resolution
+  threads: 4
+
+bd_rate:
+  baseline_tune: psnr          # anchor tune name (as in WP1 config); every other tune is compared to it
+  metrics: [vmaf_mean, psnr_yuv_mean, ssim_mean, ms_ssim_mean]
+  min_points: 3
+
+plots:
+  metrics: [vmaf_mean, psnr_yuv_mean]
+  dpi: 150
+
+validate:
+  monotonic_tol_vmaf: 0.5      # allowed VMAF increase when CRF goes up (noise margin)
+
+selftest:
+  frames: 30
+  noise_levels: [5, 15, 30]
+  blur_sigmas: [1, 2, 4]
+  resize_factors: [1.5, 2, 4]
+  scale_flags: [bilinear, bicubic, lanczos]
+  identity:   {psnr_min: 50, ssim_min: 0.9999, vmaf_min: 99.5}
+  crosscheck: {psnr_db: 0.1, ssim_abs: 0.03}     # libvmaf vs ffmpeg-native psnr/ssim
+  invariance: {psnr_db: 0.5, vmaf: 1.0}          # bit depth / chroma format changes
+  scale_spread: {psnr_db: 2.0, vmaf: 5.0}        # sensitivity to the rescaling filter
