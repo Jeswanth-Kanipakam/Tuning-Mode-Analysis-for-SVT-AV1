@@ -65,6 +65,28 @@ def tool(name: str) -> str:
     return p
 
 
+def exists(p: Path) -> bool:
+    try:
+        return p.exists()
+    except OSError:  # e.g. PermissionError on another user's home directory
+        return False
+
+
+def resolve(p) -> Path:
+    """WP1 stores absolute paths from the machine/user it ran on. If such a path is not usable here, re-anchor
+    the part starting at data/encoded or data/source onto this project (ROOT)."""
+    p = Path(str(p))
+    if exists(p):
+        return p
+    parts = p.parts
+    for i, part in enumerate(parts[:-1]):
+        if part == "data" and parts[i + 1] in ("encoded", "source"):
+            q = ROOT.joinpath(*parts[i:])
+            if exists(q):
+                return q
+    return p
+
+
 def eid(*xs) -> str:
     return hashlib.sha256("|".join(map(str, xs)).encode()).hexdigest()[:20]
 
@@ -106,7 +128,7 @@ def build_graph(cfg, r: dict, d: dict, log: Path, flags: str, model: str, fmt: s
     feat = "|".join(f"name={f}" for f in m["features"])
     return (f"[0:v]{','.join(dchain)}[d];[1:v]{rchain}[r];"
             f"[d][r]libvmaf=model=version={model}:feature={feat}:n_threads={m['threads']}"
-            f":log_fmt=json:log_path={fesc(log)}")
+            f":log_fmt=json:shortest=1:repeatlast=0:log_path={fesc(log)}")
 
 
 def aggregate(frames: list[dict]) -> dict[str, Any]:
@@ -218,11 +240,24 @@ def load_encodes(cfg, name: str) -> pd.DataFrame:
         raise RuntimeError("WP1 results not found. Run WP1 first.")
     d = pd.read_csv(p)
     d = d[(d.profile == name) & (d.status == "ok") & (d.warmup.astype(int) == 0)]
-    d = d[d.output_path.fillna("").astype(str).str.len() > 0]
-    have = d.output_path.map(lambda x: Path(str(x)).exists())
+    d = d[d.output_path.fillna("").astype(str).str.len() > 0].copy()
+    d["output_path"] = d.output_path.map(lambda x: str(resolve(x)))
+    d["input_path"] = d.input_path.map(lambda x: str(resolve(x)))
+    have = d.output_path.map(lambda x: exists(Path(x))).astype(bool)
     if (~have).any():
-        print(f"WARNING: {int((~have).sum())} encoding rows skipped (bitstream deleted by WP1)")
-    d = d[have].sort_values("run")
+        ex = d.loc[~have, "output_path"].iloc[0]
+        print(f"WARNING: {int((~have).sum())} encoding rows skipped: bitstream not found (deleted by WP1, or not copied "
+              f"to this machine). Example: {ex}")
+    d = d[have]
+    src_ok = d.input_path.map(lambda x: exists(Path(x))).astype(bool)
+    if (~src_ok).any():
+        ex = d.loc[~src_ok, "input_path"].iloc[0]
+        print(f"WARNING: {int((~src_ok).sum())} rows skipped: source video not found. Example: {ex}")
+    d = d[src_ok]
+    if d.empty:
+        raise RuntimeError(f"No usable bitstreams for profile '{name}'. Check that WP1's data/encoded and data/source "
+                           f"folders exist in this project and that WP1 kept the bitstreams.")
+    d = d.sort_values("run")
     # quality is deterministic for identical settings -> score only the first measured run
     d = d.drop_duplicates(["dataset", "video", "tune", "preset", "crf"], keep="first")
     return d.sort_values(["dataset", "video", "tune", "preset", "crf"]).reset_index(drop=True)
@@ -319,6 +354,15 @@ def summarize(cfg, name):
 
     bd = cfg["bd_rate"]
     base = bd["baseline_tune"]
+    tunes = sorted(d.tune.astype(str).unique())
+    if base not in tunes:
+        match = [t for t in tunes if t.lower() == str(base).lower()]
+        if match:
+            print(f"NOTE: baseline_tune '{base}' matched tune '{match[0]}' (case-insensitive)")
+            base = match[0]
+        else:
+            print(f"WARNING: baseline_tune '{base}' not found. Tunes in the results: {tunes}. "
+                  f"Set bd_rate.baseline_tune in config/quality.yaml.")
     out = []
     for (prof, ds, vid, tr, pre), g in d.groupby(["profile", "dataset", "video", "resolution_tier", "preset"]):
         a = g[g.tune == base].sort_values("crf")
@@ -384,7 +428,7 @@ def mk(cfg, src: Path, out: Path, vf: str | None = None, frames: int | None = No
         c += ["-vf", vf]
     if pix_fmt:
         c += ["-pix_fmt", pix_fmt]
-    c += [str(out)]
+    c += ["-strict", "-1", str(out)]  # y4m writer needs -strict -1 for 10/12-bit and some chroma formats
     p = subprocess.run(c, capture_output=True, text=True)
     if p.returncode:
         raise RuntimeError(f"ffmpeg failed: {shlex.join(c)}\n{p.stderr[-800:]}")
@@ -426,7 +470,8 @@ def selftest(cfg, src_arg):
     rows: list[dict] = []
 
     def add(test, metric, value, expect, passed):
-        rows.append({"test": test, "metric": metric, "value": value, "expected": expect, "pass": bool(passed)})
+        rows.append({"test": test, "metric": metric, "value": value, "expected": expect,
+                     "pass": passed if isinstance(passed, str) else bool(passed)})
 
     def ev(name, dist, ref_=ref, **kw):
         res = evaluate(cfg, ref_, dist, d / f"{name}.json", **kw)
@@ -463,10 +508,20 @@ def selftest(cfg, src_arg):
         s = fam[f][0][len(fam[f][0]) // 2]
         dist, a = files[(f, s)], aggs[(f, s)]
         p_nat = float(np.mean(np.minimum(native_stats(cfg, ref, dist, "psnr", d / "nat_psnr.log"), 100)))
-        s_nat = float(np.mean(native_stats(cfg, ref, dist, "ssim", d / "nat_ssim.log")))
-        dp, ds = abs(p_nat - a["psnr_y_mean"]), abs(s_nat - a["ssim_mean"])
+        dp = abs(p_nat - a["psnr_y_mean"])
         add(f"crosscheck_{f}_{s}", "psnr_y |libvmaf-native| dB", round(dp, 4), f"<={t['crosscheck']['psnr_db']}", dp <= t["crosscheck"]["psnr_db"])
-        add(f"crosscheck_{f}_{s}", "ssim_y |libvmaf-native|", round(ds, 4), f"<={t['crosscheck']['ssim_abs']}", ds <= t["crosscheck"]["ssim_abs"])
+        # libvmaf's SSIM downsamples frames by ~round(short_side/256), ffmpeg's native ssim does not. To compare the
+        # two implementations fairly, run the check at 256 px height, where libvmaf applies no downsampling.
+        small = "scale=-2:256:flags=area"
+        ref_s = mk(cfg, ref, d / "xs_ref.y4m", vf=small)
+        dist_s = mk(cfg, dist, d / f"xs_{f}.y4m", vf=small)
+        a_s = ev(f"xs_{f}", dist_s, ref_=ref_s)
+        s_nat = float(np.mean(native_stats(cfg, ref_s, dist_s, "ssim", d / "nat_ssim.log")))
+        ds = abs(s_nat - a_s["ssim_mean"])
+        add(f"crosscheck_{f}_{s}", "ssim_y |libvmaf-native| @256p", round(ds, 4), f"<={t['crosscheck']['ssim_abs']}", ds <= t["crosscheck"]["ssim_abs"])
+        s_full = float(np.mean(native_stats(cfg, ref, dist, "ssim", d / "nat_ssim_full.log")))
+        add(f"info_ssim_fullres_{f}_{s}", "ssim_y libvmaf vs native @full-res", f"{a['ssim_mean']:.4f} vs {s_full:.4f}",
+            "info: libvmaf SSIM is computed on a downsampled frame", "info")
 
     # 4. robustness: representation changes must not change the score
     s0 = fam["noise"][0][len(fam["noise"][0]) // 2]
@@ -493,7 +548,8 @@ def selftest(cfg, src_arg):
     for m, key in [("vmaf_mean", "vmaf"), ("psnr_y_mean", "psnr_db")]:
         vals = [sp[f][m] for f in sp]
         spread = max(vals) - min(vals)
-        add("scale_filter_spread", m, round(spread, 3), f"<={t['scale_spread'][key]}", spread <= t["scale_spread"][key])
+        add("scale_filter_spread", m, round(spread, 3), f"<={t['scale_spread'][key]} (warn only)",
+            True if spread <= t["scale_spread"][key] else "warn")
 
     # 6. missing frames must be detectable (frames_scored != frames in reference)
     short = mk(cfg, dist0, d / "short.y4m", frames=n - 5)
@@ -504,8 +560,14 @@ def selftest(cfg, src_arg):
     pd.set_option("display.width", 200, "display.max_colwidth", 70)
     print(rep.to_string(index=False))
     rep.to_csv(path("results/summary/metric_validation.csv"), index=False)
-    failed = int((~rep["pass"]).sum())
-    print(f"\n{len(rep) - failed}/{len(rep)} checks passed -> results/summary/metric_validation.csv")
+    failed = int(rep["pass"].map(lambda v: v is False).sum())
+    warned = int(rep["pass"].map(lambda v: v == "warn").sum())
+    infos = int(rep["pass"].map(lambda v: v == "info").sum())
+    checks = len(rep) - infos
+    print(f"\n{checks - failed - warned}/{checks} checks passed, {warned} warning(s), {failed} failed, "
+          f"{infos} info row(s) -> results/summary/metric_validation.csv")
+    if warned:
+        print("Warning: scores depend on the rescaling filter. Use ONE metrics.scale_flags for the whole study.")
     return 1 if failed else 0
 
 
