@@ -16,6 +16,7 @@ Usage:
   python scripts/wp2.py run --profile meeting [--dry-run] [--limit N]
   python scripts/wp2.py validate --profile meeting
   python scripts/wp2.py summarize --profile meeting
+  python scripts/wp2.py report --profile meeting                    # plain-language results summary (.md)
   python scripts/wp2.py plot --profile meeting [--video NAME] [--preset N] [--crf N]
 """
 from __future__ import annotations
@@ -248,6 +249,8 @@ def load_encodes(cfg, name: str) -> pd.DataFrame:
         ex = d.loc[~have, "output_path"].iloc[0]
         print(f"WARNING: {int((~have).sum())} encoding rows skipped: bitstream not found (deleted by WP1, or not copied "
               f"to this machine). Example: {ex}")
+        miss = d.loc[~have].groupby(["dataset", "video"]).size().reset_index(name="missing_bitstreams")
+        print("Missing per video:\n" + miss.head(40).to_string(index=False))
     d = d[have]
     src_ok = d.input_path.map(lambda x: exists(Path(x))).astype(bool)
     if (~src_ok).any():
@@ -279,22 +282,35 @@ def append(p: Path, row: dict):
         w.writerow(row)
 
 
-def plan(cfg, name):
+def plan(cfg, name, full=False):
     e = load_encodes(cfg, name)
-    print(e[["dataset", "video", "tune", "preset", "crf", "resolution_tier"]].to_string(index=False))
-    print(f"\nProfile={name} bitstreams to evaluate={len(e)}")
+    if full:
+        print(e[["dataset", "video", "tune", "preset", "crf", "resolution_tier"]].to_string(index=False))
+    g = e.groupby(["dataset", "video", "resolution_tier"]).size().reset_index(name="bitstreams")
+    print(g.to_string(index=False))
+    print(f"\ntunes={sorted(e.tune.astype(str).unique())}  presets={sorted(e.preset.unique().tolist())}  "
+          f"crfs={sorted(e.crf.unique().tolist())}")
+    print(f"Profile={name} videos={len(g)} bitstreams to evaluate={len(e)}")
     return e
 
 
 def run(cfg, name, dry, limit):
     enc = load_encodes(cfg, name)
     raw = path("results/raw/quality_runs.csv")
-    sig = hashlib.sha256(json.dumps(cfg["metrics"], sort_keys=True).encode()).hexdigest()[:8]
+    sig = hashlib.sha256(json.dumps({k: v for k, v in cfg["metrics"].items() if k != "threads"},
+                                    sort_keys=True).encode()).hexdigest()[:8]
+    # rows written by older versions of this script used a signature that included `threads`; accept them too
+    legacy = hashlib.sha256(json.dumps(cfg["metrics"], sort_keys=True).encode()).hexdigest()[:8]
     done = completed(raw) if cfg["measurement"].get("resume", True) else set()
+    is_done = lambda e: eid(name, e.experiment_id, sig) in done or eid(name, e.experiment_id, legacy) in done
+    todo = sum(1 for _, e in enc.iterrows() if not is_done(e))
+    total = min(todo, limit) if limit is not None else todo
+    print(f"{todo} bitstreams to score ({len(enc) - todo} already done)")
+    t0 = time.perf_counter()
     n = 0
     for _, e in enc.iterrows():
         x = eid(name, e.experiment_id, sig)
-        if x in done:
+        if is_done(e):
             print("[RESUME]", x)
             continue
         if limit is not None and n >= limit:
@@ -323,7 +339,8 @@ def run(cfg, name, dry, limit):
             "frames_ref": frames_ref, "eval_time_seconds": round(res["wall"], 3),
             "command": shlex.join(res["cmd"]), "return_code": res["code"], "log_path": str(log)})
         append(raw, row)
-        print(f"[{status.upper()}] {dist.name} vmaf={a.get('vmaf_mean', float('nan')):.2f} "
+        eta = (time.perf_counter() - t0) / n * (total - n) / 60
+        print(f"[{n}/{total}] ETA {eta:.0f} min | [{status.upper()}] {dist.name} vmaf={a.get('vmaf_mean', float('nan')):.2f} "
               f"psnr={a.get('psnr_yuv_mean', float('nan')):.2f} ssim={a.get('ssim_mean', float('nan')):.4f}")
         if res["error"]:
             print(res["error"])
@@ -336,7 +353,8 @@ def read_quality(name):
     if not p.exists():
         raise RuntimeError("No quality results. Run: python scripts/wp2.py run --profile <p>")
     d = pd.read_csv(p)
-    return d[d.profile == name] if name else d
+    d = d[d.profile == name] if name else d
+    return d.sort_values("timestamp_utc").drop_duplicates(["profile", "encode_experiment_id"], keep="last")
 
 
 def summarize(cfg, name):
@@ -581,6 +599,104 @@ def cmd_evaluate(cfg, a):
     return 0
 
 
+# ----------------------------------------------------------------------------- plain-language report
+NICE = {"vmaf_mean": "VMAF", "psnr_yuv_mean": "PSNR", "psnr_y_mean": "PSNR-Y", "ssim_mean": "SSIM", "ms_ssim_mean": "MS-SSIM"}
+
+
+def md_table(df: pd.DataFrame, nd: int = 1) -> str:
+    def f(v):
+        if isinstance(v, (float, np.floating)):
+            return "n/a" if math.isnan(v) else f"{v:.{nd}f}"
+        return str(v)
+    out = ["| " + " | ".join(map(str, df.columns)) + " |", "|" + "|".join("---" for _ in df.columns) + "|"]
+    out += ["| " + " | ".join(f(v) for v in r.values) + " |" for _, r in df.iterrows()]
+    return "\n".join(out)
+
+
+def report(cfg, name):
+    d = read_quality(name)
+    d = d[d.status == "ok"]
+    suf = name or "all"
+    bdp = path(f"results/summary/bd_rate_{suf}.csv")
+    if d.empty or not bdp.exists():
+        raise RuntimeError("Run `run` and `summarize` first")
+    bd = pd.read_csv(bdp)
+    base = bd.anchor_tune.iloc[0]
+    metrics = list(bd.metric.unique())
+    tiers = sorted(d.resolution_tier.astype(str).unique())
+    presets = sorted(d.preset.unique().tolist())
+    crfs = sorted(d.crf.unique().tolist())
+    vids = d[["dataset", "video", "resolution_tier"]].drop_duplicates()
+    L: list[str] = []
+    L += [f"# WP2 results summary (profile: {suf})", ""]
+    L += ["## 1. What was measured", ""]
+    L += [f"- {len(d)} encoded files were compared with their originals ({len(vids)} videos).",
+          "- Videos per resolution tier: " + ", ".join(f"{t}: {int((vids.resolution_tier.astype(str) == t).sum())}" for t in tiers) + ".",
+          f"- Tunes: {', '.join(sorted(d.tune.astype(str).unique()))}. Presets: {presets}. CRFs: {crfs}.",
+          f"- Scores: PSNR, SSIM, MS-SSIM and VMAF. Each tune is compared with the baseline tune **{base}** using BD-rate.", ""]
+
+    L += ["## 2. How quality and size change with CRF", "",
+          f"Baseline tune ({base}), slowest preset ({presets[0]}), averaged over the videos of each tier.", ""]
+    g = d[(d.tune.astype(str) == str(base)) & (d.preset == presets[0])]
+    t = g.groupby(["resolution_tier", "crf"], as_index=False)[["bitrate_kbps", "vmaf_mean", "psnr_yuv_mean", "ssim_mean"]].mean()
+    t.columns = ["tier", "CRF", "bitrate kbps", "VMAF", "PSNR dB", "SSIM"]
+    L += [md_table(t, 2), ""]
+    L += ["Reading: lower CRF gives higher quality and a bigger file. The table shows how much bitrate each quality step costs.", ""]
+
+    if len(presets) > 1:
+        pmin, pmax = presets[0], presets[-1]
+        rows = []
+        for (ds, vid, tr, tune), gg in d.groupby(["dataset", "video", "resolution_tier", "tune"]):
+            a, b = gg[gg.preset == pmin].sort_values("crf"), gg[gg.preset == pmax].sort_values("crf")
+            for m in ["vmaf_mean", "psnr_yuv_mean"]:
+                rows.append({"tier": tr, "metric": NICE[m], "bd": bd_rate(a.bitrate_kbps, a[m], b.bitrate_kbps, b[m])})
+        pe = pd.DataFrame(rows).groupby(["tier", "metric"], as_index=False).bd.mean()
+        L += [f"## 3. Effect of the preset (preset {pmax} vs. preset {pmin})", "",
+              f"Extra bitrate preset {pmax} needs to reach the same quality as preset {pmin}, averaged over tunes and videos.", ""]
+        pe.columns = ["tier", "metric", f"BD-rate % (preset {pmax} vs {pmin})"]
+        L += [md_table(pe), "", "Positive = the faster preset needs more bitrate (it compresses less efficiently). "
+              "This is the price paid for encoding speed; compare it with the speed gain measured in WP1.", ""]
+
+    L += [f"## 4. Tune comparison (BD-rate vs. {base})", "",
+          "Each cell: mean BD-rate over the videos of the tier, and in how many videos the tune beats the baseline "
+          "(BD-rate below 0). Negative = bitrate saved at equal quality.", ""]
+    for (tr, pre), g in bd.groupby(["resolution_tier", "preset"]):
+        n = g[["dataset", "video"]].drop_duplicates().shape[0]
+        L += [f"### {tr}, preset {pre} ({n} video{'s' if n != 1 else ''})", ""]
+        rows = []
+        for tune, gt in g.groupby("tune"):
+            r = {"tune": tune}
+            for m in metrics:
+                x = gt[gt.metric == m].bd_rate_percent.dropna()
+                r[NICE.get(m, m)] = f"{x.mean():+.1f}% ({int((x < 0).sum())}/{len(x)})" if len(x) else "n/a"
+            rows.append(r)
+        L += [md_table(pd.DataFrame(rows)), ""]
+        best = []
+        for m in metrics:
+            mm = g[g.metric == m].groupby("tune").bd_rate_percent.mean().dropna()
+            if len(mm):
+                mm[str(base)] = 0.0  # the baseline counts as 0 % and wins when no tune saves bitrate
+                w = mm.idxmin()
+                best.append((NICE.get(m, m), w, "baseline, no tune beats it" if w == str(base) else f"{mm.min():+.1f}%"))
+        L += ["Best tune per metric: " + "; ".join(f"{a}: **{b}** ({c})" for a, b, c in best) + ".", ""]
+        if len({b for _, b, _ in best}) > 1:
+            L += ["The metrics do **not** agree on one winner here, so the answer depends on which quality measure you trust.", ""]
+
+    L += ["## 5. How to read this and what to be careful about", "",
+          f"- BD-rate compares bitrate at equal quality over the overlapping quality range. Comparing tunes at the same CRF is misleading, because tunes change the bitrate as well.",
+          f"- **{base}** is the reference, so it is not listed. A tune that optimises something else will usually look worse on {base}'s own metric.",
+          "- VMAF is the most perceptual score here; PSNR measures pixel error only. When they disagree, say so instead of picking one.",
+          "- SSIM and MS-SSIM from libvmaf are computed on downsampled frames, so compare them only inside one resolution tier.",
+          "- Each quality value comes from one encode per setting (quality is deterministic). Small differences (a few percent) between tunes, or tiers with only a few videos, are not strong evidence.",
+          "- The CRF range is wide, so very low and very high quality regions both enter the BD-rate fit.", ""]
+    text = "\n".join(L)
+    out = path(f"results/summary/results_report_{suf}.md")
+    out.write_text(text)
+    print(text)
+    print(f"\nWritten to {out}")
+    return 0
+
+
 # ----------------------------------------------------------------------------- plots
 def plot(cfg, name, video=None, preset=None, crf=None):
     import matplotlib
@@ -600,8 +716,8 @@ def plot(cfg, name, video=None, preset=None, crf=None):
     metrics = cfg["plots"]["metrics"]
     made: list[Path] = []
 
-    def save(fig, fname):
-        fig.tight_layout()
+    def save(fig, fname, rect=None):
+        fig.tight_layout(rect=rect) if rect else fig.tight_layout()
         f = out / fname
         fig.savefig(f, dpi=dpi)
         plt.close(fig)
@@ -627,27 +743,46 @@ def plot(cfg, name, video=None, preset=None, crf=None):
     for (ds, vid), g in d.groupby(["dataset", "video"]):
         for m in metrics:
             rd_figure(g, m, f"{ds}/{vid}", f"rd_{ds}_{Path(str(vid)).stem}_{m}_{suf}.png")
+    tiers = sorted(d.resolution_tier.astype(str).unique())
     if d[["dataset", "video"]].drop_duplicates().shape[0] > 1:
         mean = d.groupby(["tune", "preset", "crf"], as_index=False)[metrics + ["bitrate_kbps"]].mean()
         for m in metrics:
-            rd_figure(mean, m, "mean over all videos", f"rd_mean_{m}_{suf}.png")
+            rd_figure(mean, m, "mean over all videos (mixes resolution tiers)", f"rd_mean_{m}_{suf}.png")
+    if len(tiers) > 1:  # averages are only meaningful within one resolution tier
+        for tr in tiers:
+            mt = d[d.resolution_tier.astype(str) == tr].groupby(["tune", "preset", "crf"], as_index=False)[metrics + ["bitrate_kbps"]].mean()
+            for m in metrics:
+                rd_figure(mt, m, f"mean over {tr} videos", f"rd_mean_{tr}_{m}_{suf}.png")
 
-    # 2. BD-rate bars (needs `summarize` first)
+    # 2. BD-rate bars (needs `summarize` first): overall and, if there are several, one figure per resolution tier
     bdp = path(f"results/summary/bd_rate_{suf}.csv")
-    if bdp.exists():
-        bd = pd.read_csv(bdp)
+
+    def bd_figure(bd, title, fname):
         ms = list(bd.metric.unique())
         fig, axs = plt.subplots(1, len(ms), figsize=(4.5 * len(ms), 4), squeeze=False)
         for ax, m in zip(axs[0], ms):
             pv = bd[bd.metric == m].groupby(["preset", "tune"]).bd_rate_percent.mean().unstack("tune")
-            pv.plot.bar(ax=ax, rot=0)
+            pv.plot.bar(ax=ax, rot=0, legend=False, width=0.8)
+            for c in ax.containers:
+                ax.bar_label(c, fmt="%.1f", fontsize=7, padding=1)
             ax.axhline(0, color="k", lw=0.8)
-            ax.set_title(m)
+            ax.set_title(NICE.get(m, m))
             ax.set_xlabel("preset")
             ax.set_ylabel("BD-rate % (negative = better)")
             ax.grid(axis="y", alpha=0.3)
-        fig.suptitle(f"BD-rate vs '{bd.anchor_tune.iloc[0]}'")
-        save(fig, f"bd_rate_{suf}.png")
+            ax.margins(y=0.12)
+        h, lab = axs[0][0].get_legend_handles_labels()
+        fig.legend(h, lab, title="tune", loc="lower center", ncol=len(lab))  # below the bars, never over them
+        fig.suptitle(title)
+        save(fig, fname, rect=[0, 0.1, 1, 0.95])
+
+    if bdp.exists():
+        bd = pd.read_csv(bdp)
+        anchor = bd.anchor_tune.iloc[0]
+        bd_figure(bd, f"BD-rate vs '{anchor}' (all videos; mixes resolution tiers)", f"bd_rate_{suf}.png")
+        if bd.resolution_tier.nunique() > 1:
+            for tr, g in bd.groupby("resolution_tier"):
+                bd_figure(g, f"BD-rate vs '{anchor}', {tr} videos", f"bd_rate_{tr}_{suf}.png")
     else:
         print("Skipping BD-rate plot (run `summarize` first)")
 
@@ -685,11 +820,13 @@ def main():
     s = a.add_subparsers(dest="cmd", required=True)
     s.add_parser("preflight")
     p = s.add_parser("plan"); p.add_argument("--profile", choices=PROFILES, required=True)
+    p.add_argument("--list", action="store_true", help="print every bitstream, not just a summary")
     r = s.add_parser("run"); r.add_argument("--profile", choices=PROFILES, required=True)
     r.add_argument("--dry-run", action="store_true"); r.add_argument("--limit", type=int)
     q = s.add_parser("summarize"); q.add_argument("--profile", choices=PROFILES)
     v = s.add_parser("validate"); v.add_argument("--profile", choices=PROFILES)
     t = s.add_parser("selftest"); t.add_argument("--input")
+    rp = s.add_parser("report"); rp.add_argument("--profile", choices=PROFILES)
     pl = s.add_parser("plot"); pl.add_argument("--profile", choices=PROFILES)
     pl.add_argument("--video"); pl.add_argument("--preset", type=int); pl.add_argument("--crf", type=int)
     e = s.add_parser("evaluate")
@@ -698,9 +835,9 @@ def main():
     x = a.parse_args()
     cfg = load_cfg(x.config)
     ensure_dirs()
-    return {"preflight": lambda: preflight(cfg), "plan": lambda: plan(cfg, x.profile) is None,
+    return {"preflight": lambda: preflight(cfg), "plan": lambda: plan(cfg, x.profile, x.list) is None,
             "run": lambda: run(cfg, x.profile, x.dry_run, x.limit), "summarize": lambda: summarize(cfg, x.profile),
-            "validate": lambda: validate(cfg, x.profile), "plot": lambda: plot(cfg, x.profile, x.video, x.preset, x.crf),
+            "validate": lambda: validate(cfg, x.profile), "report": lambda: report(cfg, x.profile), "plot": lambda: plot(cfg, x.profile, x.video, x.preset, x.crf),
             "selftest": lambda: selftest(cfg, x.input),
             "evaluate": lambda: cmd_evaluate(cfg, x)}[x.cmd]()
 
