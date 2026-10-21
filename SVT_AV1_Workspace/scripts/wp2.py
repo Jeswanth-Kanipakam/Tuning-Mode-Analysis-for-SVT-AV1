@@ -183,17 +183,29 @@ def evaluate(cfg, ref: Path, dist: Path, log: Path, tier: str | None = None,
 
 # ----------------------------------------------------------------------------- BD-rate
 def bd_rate(r1, q1, r2, q2, min_pts: int = 3) -> float:
-    """Bjontegaard delta-rate (%) of curve 2 vs anchor curve 1 at equal quality. Negative = saving."""
-    r1, q1, r2, q2 = (np.asarray(x, float) for x in (r1, q1, r2, q2))
-    if min(len(q1), len(q2)) < min_pts or (r1 <= 0).any() or (r2 <= 0).any():
+    """Bjontegaard delta-rate (%) of curve 2 vs anchor curve 1 at equal quality. Negative = saving.
+    Uses piecewise-cubic (PCHIP) interpolation of log-bitrate over quality, as in the AOM CTC tools.
+    PCHIP does not overshoot, so near-flat (saturated) curves cannot blow up like a cubic polyfit."""
+    from scipy.interpolate import PchipInterpolator
+
+    def prep(r, q):
+        r, q = np.asarray(r, float), np.asarray(q, float)
+        ok = np.isfinite(r) & np.isfinite(q) & (r > 0)
+        r, q = r[ok], q[ok]
+        o = np.argsort(q)
+        r, q = r[o], q[o]
+        keep = np.r_[True, np.diff(q) > 1e-9]
+        return np.log(r[keep]), q[keep]
+
+    l1, q1 = prep(r1, q1)
+    l2, q2 = prep(r2, q2)
+    if min(len(q1), len(q2)) < max(min_pts, 2):
         return math.nan
     lo, hi = max(q1.min(), q2.min()), min(q1.max(), q2.max())
     if hi <= lo:
         return math.nan
-    deg = min(3, len(q1) - 1, len(q2) - 1)
-    i1 = np.polyint(np.polyfit(q1, np.log(r1), deg))
-    i2 = np.polyint(np.polyfit(q2, np.log(r2), deg))
-    avg = ((np.polyval(i2, hi) - np.polyval(i2, lo)) - (np.polyval(i1, hi) - np.polyval(i1, lo))) / (hi - lo)
+    f1, f2 = PchipInterpolator(q1, l1), PchipInterpolator(q2, l2)
+    avg = (f2.integrate(lo, hi) - f1.integrate(lo, hi)) / (hi - lo)
     return (math.exp(avg) - 1) * 100
 
 

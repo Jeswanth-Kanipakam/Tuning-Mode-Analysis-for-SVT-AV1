@@ -1,0 +1,51 @@
+# WP2 - Video quality evaluation settings (read by scripts/wp2.py)
+
+tools:
+  ffmpeg: "/home/od26udiz/tools/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg"
+  ffprobe: "/home/od26udiz/tools/ffmpeg-master-latest-linux64-gpl/bin/ffprobe"
+
+inputs:
+  encoding_runs: "results/raw/encoding_runs.csv"   # WP1 results
+
+measurement:
+  resume: true          # skip bitstreams that were already scored
+
+metrics:
+  features: ["psnr", "float_ssim", "float_ms_ssim"]   # computed alongside VMAF
+  vmaf_model: "vmaf_v0.6.1"
+  vmaf_model_4k: "vmaf_4k_v0.6.1"                       # used for the 2160p_or_higher tier
+  pix_fmt: "ref"                                        # compare in the reference's own pixel format
+  scale_flags: "bicubic"                                # only used if resolutions differ
+  threads: 6
+
+bd_rate:
+  baseline_tune: "PSNR"                                 # anchor tune; change if the team prefers another one
+  metrics: ["vmaf_mean", "psnr_yuv_mean", "ssim_mean", "ms_ssim_mean"]
+  min_points: 4
+
+validate:
+  monotonic_tol_vmaf: 0.5     # allowed VMAF rise when CRF increases (noise margin)
+
+plots:
+  metrics: ["vmaf_mean", "psnr_yuv_mean"]
+  dpi: 150
+
+selftest:
+  frames: 30
+  identity:
+    psnr_min: 50
+    ssim_min: 0.9999
+    vmaf_min: 99.5
+  noise_levels: [5, 15, 30]
+  blur_sigmas: [0.5, 1.5, 3.0]
+  resize_factors: [1.5, 2, 4]
+  crosscheck:
+    psnr_db: 0.1
+    ssim_abs: 0.005
+  invariance:
+    psnr_db: 0.1
+    vmaf: 0.5
+  scale_flags: ["bilinear", "bicubic", "lanczos"]
+  scale_spread:
+    vmaf: 3.0
+    psnr_db: 1.0

@@ -1,0 +1,94 @@
+{
+  "timestamp_utc": "2026-10-20T11:00:26.992988+00:00",
+  "platform": "Linux-5.14.0-756.el9.x86_64-x86_64-with-glibc2.34",
+  "python": "3.9.25 (main, Aug 13 2026, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]",
+  "ffmpeg_version": [
+    "ffmpeg version N-127697-g3ebed8c087-20261019 Copyright (c) 2000-2026 the FFmpeg developers",
+    "built with gcc 16.2.0 (crosstool-NG 1.29.0.7_b1a94f6)",
+    "configuration: --prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-ffbuild-linux-gnu- --arch=x86_64 --target-os=linux --enable-gpl --enable-version3 --disable-debug --enable-iconv --enable-zlib --enable-libxml2 --enable-libsoxr --enable-openssl --enable-libvmaf --enable-libxcb --enable-xlib --enable-fontconfig --enable-libharfbuzz --enable-libfreetype --enable-libfribidi --enable-lcms2 --enable-vulkan --enable-libdav1d --enable-libvorbis --enable-librav1e --enable-librsvg --enable-libpulse --enable-gmp --enable-lzma --enable-liblcevc-dec --enable-opencl --enable-amf --enable-libaom --enable-avisynth --enable-chromaprint --enable-libdavs2 --enable-libdvdread --enable-libdvdnav --disable-libfdk-aac --enable-ffnvcodec --enable-cuda-llvm --enable-frei0r --enable-libgme --enable-libkvazaar --enable-libaribb24 --enable-libaribcaption --enable-libass --enable-libbluray --enable-libcurl --enable-libjxl --enable-libmp3lame --enable-libopus --enable-libplacebo --enable-librist --enable-libssh --enable-libtheora --enable-libvpx --enable-libwebp --enable-libzmq --enable-lv2 --enable-libvpl --enable-openal --enable-liboapv --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenjpeg --enable-libopenmpt --enable-librubberband --disable-schannel --enable-sdl2 --enable-libsnappy --enable-libsrt --enable-libsvtav1 --enable-libtwolame --enable-libuavs3d --enable-libdrm --enable-vaapi --enable-vapoursynth --enable-libvidstab --enable-libvvenc --disable-whisper --enable-libx264 --enable-libx265 --enable-libxavs2 --enable-libxvid --enable-libzimg --enable-libzvbi --extra-cflags=-DLIBTWOLAME_STATIC --extra-cxxflags= --extra-libs='-lgomp -ldl' --extra-ldflags=-pthread --extra-ldexeflags= --cc=x86_64-ffbuild-linux-gnu-gcc --cxx=x86_64-ffbuild-linux-gnu-g++ --ar=x86_64-ffbuild-linux-gnu-gcc-ar --ranlib=x86_64-ffbuild-linux-gnu-gcc-ranlib --nm=x86_64-ffbuild-linux-gnu-gcc-nm --extra-version=20261019"
+  ],
+  "config": {
+    "tools": {
+      "ffmpeg": "/home/od26udiz/tools/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg",
+      "ffprobe": "/home/od26udiz/tools/ffmpeg-master-latest-linux64-gpl/bin/ffprobe"
+    },
+    "inputs": {
+      "encoding_runs": "results/raw/encoding_runs.csv"
+    },
+    "measurement": {
+      "resume": true
+    },
+    "metrics": {
+      "features": [
+        "psnr",
+        "float_ssim",
+        "float_ms_ssim"
+      ],
+      "vmaf_model": "vmaf_v0.6.1",
+      "vmaf_model_4k": "vmaf_4k_v0.6.1",
+      "pix_fmt": "ref",
+      "scale_flags": "bicubic",
+      "threads": 6
+    },
+    "bd_rate": {
+      "baseline_tune": "PSNR",
+      "metrics": [
+        "vmaf_mean",
+        "psnr_yuv_mean",
+        "ssim_mean",
+        "ms_ssim_mean"
+      ],
+      "min_points": 4
+    },
+    "validate": {
+      "monotonic_tol_vmaf": 0.5
+    },
+    "plots": {
+      "metrics": [
+        "vmaf_mean",
+        "psnr_yuv_mean"
+      ],
+      "dpi": 150
+    },
+    "selftest": {
+      "frames": 30,
+      "identity": {
+        "psnr_min": 50,
+        "ssim_min": 0.9999,
+        "vmaf_min": 99.5
+      },
+      "noise_levels": [
+        5,
+        15,
+        30
+      ],
+      "blur_sigmas": [
+        0.5,
+        1.5,
+        3.0
+      ],
+      "resize_factors": [
+        1.5,
+        2,
+        4
+      ],
+      "crosscheck": {
+        "psnr_db": 0.1,
+        "ssim_abs": 0.005
+      },
+      "invariance": {
+        "psnr_db": 0.1,
+        "vmaf": 0.5
+      },
+      "scale_flags": [
+        "bilinear",
+        "bicubic",
+        "lanczos"
+      ],
+      "scale_spread": {
+        "vmaf": 3.0,
+        "psnr_db": 1.0
+      }
+    }
+  }
+}
