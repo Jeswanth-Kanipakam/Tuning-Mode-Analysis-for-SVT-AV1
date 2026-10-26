@@ -58,3 +58,58 @@ profiles:
     repetitions: 1
     warmup_runs: 0
     keep_all_bitstreams: true
+
+# WP2: video quality evaluation
+inputs:
+  encoding_runs: "results/raw/encoding_runs_wp2_recovered.csv"
+
+metrics:
+  vmaf_model: "vmaf_v0.6.1"
+  vmaf_model_4k: null
+  features:
+    - psnr
+    - float_ssim
+    - float_ms_ssim
+  threads: 4
+  scale_flags: bicubic
+  pix_fmt: ref
+
+bd_rate:
+  baseline_tune: "VQ"
+  metrics:
+    - vmaf_mean
+    - psnr_yuv_mean
+  min_points: 3
+
+validate:
+  monotonic_tol_vmaf: 0.5
+
+selftest:
+  frames: 30
+  identity:
+    psnr_min: 40
+    ssim_min: 0.99
+    vmaf_min: 90
+  noise_levels: [5, 10, 20]
+  blur_sigmas: [0.5, 1.0, 2.0]
+  resize_factors: [1.2, 1.5, 2.0]
+  crosscheck:
+    psnr_db: 0.5
+    ssim_abs: 0.05
+  invariance:
+    psnr_db: 2.0
+    vmaf: 10.0
+  scale_flags:
+    - bicubic
+    - bilinear
+    - lanczos
+  scale_spread:
+    vmaf: 5.0
+    psnr_db: 2.0
+
+plots:
+  dpi: 150
+  metrics:
+    - vmaf_mean
+    - psnr_yuv_mean
+    - ssim_mean

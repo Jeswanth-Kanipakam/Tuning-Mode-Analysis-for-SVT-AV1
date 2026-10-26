@@ -17,6 +17,10 @@ Usage:
   python scripts/wp2.py validate --profile meeting
   python scripts/wp2.py summarize --profile meeting
   python scripts/wp2.py plot --profile meeting [--video NAME] [--preset N] [--crf N]
+
+File lookup: WP1 stores absolute paths from the machine/user it ran on. Those paths are re-anchored onto this
+project's data/encoded and data/source folders; if that fails, files are looked up by file name anywhere below
+those folders. Rows whose files still cannot be found are skipped, and a per-dataset summary says which ones.
 """
 from __future__ import annotations
 
@@ -72,18 +76,49 @@ def exists(p: Path) -> bool:
         return False
 
 
+_INDEX: dict[str, dict[str, list[Path]]] = {}
+
+
+def name_index(sub: str) -> dict[str, list[Path]]:
+    """File name -> paths for everything below <ROOT>/data/<sub> (built once per run)."""
+    if sub not in _INDEX:
+        idx: dict[str, list[Path]] = {}
+        base = ROOT / "data" / sub
+        if exists(base):
+            for q in base.rglob("*"):
+                try:
+                    if q.is_file():
+                        idx.setdefault(q.name, []).append(q)
+                except OSError:
+                    continue
+        _INDEX[sub] = idx
+    return _INDEX[sub]
+
+
 def resolve(p) -> Path:
-    """WP1 stores absolute paths from the machine/user it ran on. If such a path is not usable here, re-anchor
-    the part starting at data/encoded or data/source onto this project (ROOT)."""
+    """Find a file that WP1 recorded under a path from another machine/user.
+    1. the path as stored; 2. the part starting at data/encoded or data/source re-anchored onto ROOT;
+    3. a lookup by file name below ROOT/data/<encoded|source> (parent folder names break ties)."""
     p = Path(str(p))
     if exists(p):
         return p
     parts = p.parts
+    sub = None
     for i, part in enumerate(parts[:-1]):
         if part == "data" and parts[i + 1] in ("encoded", "source"):
+            sub = parts[i + 1]
             q = ROOT.joinpath(*parts[i:])
             if exists(q):
                 return q
+            break
+    if sub is None:
+        sub = "encoded" if p.suffix.lower() in (".ivf", ".obu", ".mkv", ".mp4") else "source"
+    cands = name_index(sub).get(p.name, [])
+    if len(cands) == 1:
+        return cands[0]
+    if len(cands) > 1:
+        want = set(parts[:-1])
+        return max(cands, key=lambda c: len(want & set(c.parts[:-1])))
     return p
 
 
@@ -234,6 +269,20 @@ def preflight(cfg):
 
 
 # ----------------------------------------------------------------------------- run on WP1 output
+def report_missing(d: pd.DataFrame, have: pd.Series, what: str, col: str):
+    """Print how many rows are skipped per dataset / resolution tier, with one example path each."""
+    miss = d[~have]
+    if miss.empty:
+        return
+    print(f"WARNING: {len(miss)} of {len(d)} rows skipped: {what} not found.")
+    keys = [k for k in ["dataset", "resolution_tier"] if k in miss.columns]
+    for k, g in miss.groupby(keys, dropna=False):
+        k = k if isinstance(k, tuple) else (k,)
+        print(f"  - {' / '.join(map(str, k))}: {len(g)} rows missing, e.g. {g[col].iloc[0]}")
+    print(f"  Copy the missing files into this project (data/encoded/<profile>/<dataset>/..., "
+          f"data/source/<dataset>/...) or re-run WP1 for those datasets.")
+
+
 def load_encodes(cfg, name: str) -> pd.DataFrame:
     p = path(cfg["inputs"]["encoding_runs"])
     if not p.exists():
@@ -241,25 +290,22 @@ def load_encodes(cfg, name: str) -> pd.DataFrame:
     d = pd.read_csv(p)
     d = d[(d.profile == name) & (d.status == "ok") & (d.warmup.astype(int) == 0)]
     d = d[d.output_path.fillna("").astype(str).str.len() > 0].copy()
+    total = len(d)
     d["output_path"] = d.output_path.map(lambda x: str(resolve(x)))
     d["input_path"] = d.input_path.map(lambda x: str(resolve(x)))
     have = d.output_path.map(lambda x: exists(Path(x))).astype(bool)
-    if (~have).any():
-        ex = d.loc[~have, "output_path"].iloc[0]
-        print(f"WARNING: {int((~have).sum())} encoding rows skipped: bitstream not found (deleted by WP1, or not copied "
-              f"to this machine). Example: {ex}")
+    report_missing(d, have, "bitstream", "output_path")
     d = d[have]
     src_ok = d.input_path.map(lambda x: exists(Path(x))).astype(bool)
-    if (~src_ok).any():
-        ex = d.loc[~src_ok, "input_path"].iloc[0]
-        print(f"WARNING: {int((~src_ok).sum())} rows skipped: source video not found. Example: {ex}")
+    report_missing(d, src_ok, "source video", "input_path")
     d = d[src_ok]
     if d.empty:
-        raise RuntimeError(f"No usable bitstreams for profile '{name}'. Check that WP1's data/encoded and data/source "
-                           f"folders exist in this project and that WP1 kept the bitstreams.")
+        raise RuntimeError(f"No usable bitstreams for profile '{name}' (0 of {total} rows have both the bitstream and "
+                           f"the source video in {ROOT / 'data'}). See the per-dataset warnings above.")
     d = d.sort_values("run")
     # quality is deterministic for identical settings -> score only the first measured run
     d = d.drop_duplicates(["dataset", "video", "tune", "preset", "crf"], keep="first")
+    print(f"Usable rows for profile '{name}': {len(d)} of {total}")
     return d.sort_values(["dataset", "video", "tune", "preset", "crf"]).reset_index(drop=True)
 
 

@@ -1,0 +1,60 @@
+project:
+  name: "Tuning Mode Analysis for SVT-AV1"
+  output_container: "ivf"
+
+tools:
+  encoder: "SvtAv1EncApp"
+  ffprobe: "ffprobe"
+  ffmpeg: "ffmpeg"
+
+encoder:
+  # SVT-AV1 v4.2.0 video tuning modes.
+  # IQ/tune=3 is excluded because the official v4.2.0 documentation
+  # describes it as a still-image-only mode.
+  tunes:
+    - {name: "VQ",      value: 0}
+    - {name: "PSNR",    value: 1}
+    - {name: "SSIM",    value: 2}
+    - {name: "MS_SSIM", value: 4}
+    - {name: "VMAF",    value: 5}
+  presets: [1, 10]
+  crfs: [18, 26, 35, 44, 52, 60]
+  lp: 0
+
+measurement:
+  memory_sample_interval_seconds: 0.10
+  confidence_level: 0.95
+  resume: true
+
+profiles:
+  meeting:
+    selection:
+      mode: "resolution_balanced"
+      per_resolution_tier: 1
+    tunes: ["VQ", "PSNR", "SSIM", "MS_SSIM", "VMAF"]
+    presets: [1, 10]
+    crfs: [18, 26, 35, 44, 52, 60]
+    repetitions: 1
+    warmup_runs: 0
+    keep_all_bitstreams: true
+
+  confidence:
+    selection:
+      mode: "prefer_1080p"
+      max_videos: 1
+    tunes: ["PSNR"]
+    presets: [1, 10]
+    crfs: [26, 35, 44]
+    repetitions: 5
+    warmup_runs: 1
+    keep_all_bitstreams: false
+
+  full:
+    selection:
+      mode: "all"
+    tunes: ["VQ", "PSNR", "SSIM", "MS_SSIM", "VMAF"]
+    presets: [1, 10]
+    crfs: [18, 26, 35, 44, 52, 60]
+    repetitions: 1
+    warmup_runs: 0
+    keep_all_bitstreams: true
