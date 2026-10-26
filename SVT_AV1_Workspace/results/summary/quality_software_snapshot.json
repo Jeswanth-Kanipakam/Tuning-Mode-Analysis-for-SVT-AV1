@@ -1,0 +1,215 @@
+{
+  "timestamp_utc": "2026-10-20T12:07:36.721514+00:00",
+  "platform": "Linux-5.14.0-756.el9.x86_64-x86_64-with-glibc2.34",
+  "python": "3.9.25 (main, Aug 13 2026, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]",
+  "ffmpeg_version": [
+    "ffmpeg version 7.1.5 Copyright (c) 2000-2026 the FFmpeg developers",
+    "built with gcc 11 (GCC)",
+    "configuration: --prefix=/usr --bindir=/usr/bin --datadir=/usr/share/ffmpeg --docdir=/usr/share/doc/ffmpeg --incdir=/usr/include/ffmpeg --libdir=/usr/lib64 --mandir=/usr/share/man --arch=x86_64 --optflags='-O2 -flto=auto -ffat-lto-objects -fexceptions -g -grecord-gcc-switches -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -fstack-protector-strong -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -march=x86-64-v2 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection' --extra-ldflags='-Wl,-z,relro -Wl,--as-needed -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 ' --disable-htmlpages --disable-static --disable-stripping --enable-pic --enable-shared --enable-gpl --enable-version3 --enable-amf --enable-avcodec --enable-avdevice --enable-avfilter --enable-avformat --enable-alsa --enable-bzlib --disable-chromaprint --disable-cuda-nvcc --enable-cuvid --disable-decklink --enable-frei0r --enable-gcrypt --enable-gmp --enable-gnutls --enable-gray --enable-iconv --enable-ladspa --enable-libaom --enable-libaribb24 --enable-libaribcaption --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --disable-libdavs2 --enable-libdc1394 --enable-libdvdnav --enable-libdvdread --enable-libfdk-aac --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libiec61883 --enable-libilbc --enable-libjack --enable-libjxl --enable-libklvanc --disable-liblensfun --disable-liblcevc-dec --enable-libmodplug --enable-libmp3lame --enable-libmysofa --disable-libnpp --enable-libopencore-amrnb --enable-libopencore-amrwb --disable-libopencv --enable-libopenh264 --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libpulse --enable-libqrencode --disable-libquirc --enable-librabbitmq --enable-librav1e --enable-librist --enable-librsvg --enable-librubberband --enable-libshaderc --disable-libshine --enable-libsmbclient --enable-libsnappy --enable-libsvtav1 --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --disable-libtensorflow --enable-libtesseract --enable-libtheora --disable-libtorch --disable-libuavs3d --enable-libtwolame --enable-libv4l2 --enable-libvidstab --enable-libvmaf --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpl --enable-libvpx --enable-libwebp --disable-libxavs2 --disable-libxavs --enable-libxcb --enable-libxcb-shape --enable-libxcb-shm --enable-libxcb-xfixes --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-libzvbi --enable-lto --enable-lv2 --enable-lzma --enable-manpages --enable-nvdec --enable-nvenc --enable-openal --enable-opencl --enable-opengl --disable-openssl --enable-postproc --enable-pthreads --enable-sdl2 --enable-shared --enable-swresample --enable-swscale --enable-v4l2-m2m --enable-vaapi --enable-vapoursynth --enable-vdpau --enable-vulkan --enable-xlib --enable-zlib --enable-muxers --enable-demuxers --enable-hwaccels --disable-encoders --disable-decoders --disable-decoder='h264,hevc,libxevd,vc1,vvc' --enable-encoder=',a64multi,a64multi5,aac,libfdk_aac,ac3,adpcm_adx,adpcm_argo,adpcm_g722,adpcm_g726,adpcm_g726le,adpcm_ima_alp,adpcm_ima_amv,adpcm_ima_apm,adpcm_ima_qt,adpcm_ima_ssi,adpcm_ima_wav,adpcm_ima_ws,adpcm_ms,adpcm_swf,adpcm_yamaha,alac,alias_pix,amv,anull,apng,ass,asv1,asv2,av1_amf,av1_nvenc,av1_qsv,av1_vaapi,bitpacked,bmp,cinepak,cljr,dca,dfpwm,dnxhd,dnxhr,dpx,dvbsub,dvdsub,dvvideo,exr,ffv1,ffvhuff,flac,flashsv,flashsv2,flv,g723_1,gif,h261,h263,h263_v4l2m2m,h263p,h264_amf,h264_nvenc,h264_qsv,h264_v4l2m2m,h264_vaapi,hap,hdr,hevc_amf,hevc_nvenc,hevc_qsv,hevc_v4l2m2m,hevc_vaapi,huffyuv,ilbc,jpeg2000,jpegls,libaom,libaom_av1,libcodec2,libgsm,libgsm_ms,libilbc,libjxl,liblc3,libmp3lame,libopencore_amrnb,libopenh264,libopenjpeg,libopus,librav1e,libspeex,libsvtav1,libtheora,libtwolame,libvo_amrwbenc,libvorbis,libvpx_vp8,libvpx_vp9,libwebp,libwebp_anim,libxvid,mjpeg,mjpeg_qsv,mjpeg_vaapi,mlp,mp2,mp2fixed,mpeg1video,mpeg2_qsv,mpeg2_vaapi,mpeg2video,mpeg4,mpeg4_v4l2m2m,msmpeg4v2,msmpeg4v3,msvideo1,nellymoser,opus,pam,pbm,pcm_alaw,pcm_f32be,pcm_f32le,pcm_f64be,pcm_f64le,pcm_mulaw,pcm_s16be,pcm_s16be_planar,pcm_s16le,pcm_s16le_planar,pcm_s24be,pcm_s24le,pcm_s24le_planar,pcm_s32be,pcm_s32le,pcm_s32le_planar,pcm_s8,pcm_s8_planar,pcm_u16be,pcm_u16le,pcm_u24be,pcm_u24le,pcm_u32be,pcm_u32le,pcm_u8,pcx,pgm,pgmyuv,phm,png,ppm,prores,prores_aw,prores_ks,qoi,qtrle,r10k,r210,ra_144,rawvideo,roq,roq_dpcm,rpza,rv10,rv20,s302m,sbc,sgi,smc,snow,sonic,sonic_ls,speedhq,srt,ssa,subrip,sunrast,svq1,targa,text,tiff,truehd,tta,ttml,utvideo,v210,v308,v408,v410,vc1_qsv,vc1_v4l2m2m,vc2,vnull,vorbis,vp8_qsv,vp8_v4l2m2m,vp8_vaapi,vp9_qsv,vp9_vaapi,wavpack,wbmp,webvtt,wmav1,wmav2,wmv1,wmv2,wrapped_avframe,xbm,xface,xsub,xwd,y41p,yuv4,zlib,zmbv,' --enable-decoder=',aac,aasc,libfdk_aac,ac3,acelp_kelvin,adpcm_4xm,adpcm_adx,adpcm_afc,adpcm_agm,adpcm_aica,adpcm_argo,adpcm_ct,adpcm_dtk,adpcm_ea,adpcm_ea_maxis_xa,adpcm_ea_r1,adpcm_ea_r2,adpcm_ea_r3,adpcm_ea_xas,adpcm_g722,adpcm_g726,adpcm_g726le,adpcm_ima_acorn,adpcm_ima_alp,adpcm_ima_amv,adpcm_ima_apc,adpcm_ima_apm,adpcm_ima_cunning,adpcm_ima_dat4,adpcm_ima_dk3,adpcm_ima_dk4,adpcm_ima_ea_eacs,adpcm_ima_ea_sead,adpcm_ima_iss,adpcm_ima_moflex,adpcm_ima_mtf,adpcm_ima_oki,adpcm_ima_qt,adpcm_ima_qt_at,adpcm_ima_rad,adpcm_ima_smjpeg,adpcm_ima_ssi,adpcm_ima_wav,adpcm_ima_ws,adpcm_ms,adpcm_mtaf,adpcm_psx,adpcm_sbpro_2,adpcm_sbpro_3,adpcm_sbpro_4,adpcm_swf,adpcm_thp,adpcm_thp_le,adpcm_vima,adpcm_xa,adpcm_xmd,adpcm_yamaha,adpcm_zork,aic,alac,alias_pix,amrnb,amrwb,amv,anm,ansi,anull,apac,ape,apng,arbc,argo,ass,asv1,asv2,atrac1,atrac3,atrac3al,atrac3p,atrac3pal,aura,aura2,av1,av1_qsv,bethsoftvid,bfi,bink,binkaudio_dct,binkaudio_rdft,bintext,bitpacked,bmp,bmv_audio,bmv_video,bonk,brender_pix,c93,cbd2_dpcm,ccaption,cdgraphics,cdtoons,cdxl,cinepak,clearvideo,cljr,cook,cpia,cscd,cyuv,dca,dds,derf_dpcm,dfa,dfpwm,dirac,dnxhd,dnxhr,dolby_e,dpx,dsd_lsbf,dsd_msbf,dsicinaudio,dsicinvideo,dss_sp,dvaudio,dvbsub,dvdsub,dvvideo,dxa,dxtory,eacmv,eamad,eatgq,eatgv,eatqi,eightbps,eightsvx_exp,eightsvx_fib,escape124,escape130,evrc,exr,ffv1,ffvhuff,ffwavesynth,fits,flac,flashsv,flashsv2,flic,flv,fmvc,fourxm,ftr,g723_1,g729,gdv,gem,gif,gremlin_dpcm,gsm,gsm_ms,gsm_ms_at,h261,h263,h263_v4l2m2m,h263i,h263p,hap,hca,hcom,hdr,hnm4_video,hq_hqa,hqx,huffyuv,hymt,iac,idcin,idf,iff_ilbm,ilbc,imc,indeo2,indeo3,indeo4,indeo5,interplay_acm,interplay_dpcm,interplay_video,ipu,jacosub,jpeg2000,jpegls,jv,kgv1,kmvc,lagarith,libaribb24,libaribcaption,libaom,libaom_av1,libcodec2,libdav1d,libgsm,libgsm_ms,libilbc,libjxl,liblc3,libopencore_amrnb,libopencore_amrwb,libopenh264,libopenjpeg,libopus,librsvg,libschroedinger,libspeex,libvorbis,libvpx_vp8,libvpx_vp9,libzvbi_teletext,loco,lscr,m101,mace3,mace6,mdec,media100,metasound,microdvd,mimic,misc4,mjpeg,mjpeg_qsv,mjpegb,mlp,mmvideo,motionpixels,mp1,mp1float,mp2,mp2float,mp3,mp3adu,mp3adufloat,mp3float,mp3on4,mp3on4float,mpc7,mpc8,mpeg1_v4l2m2m,mpeg1video,mpeg2_qsv,mpeg2_v4l2m2m,mpeg2video,mpeg4,mpeg4_v4l2m2m,mpegvideo,mpl2,msa1,mscc,msmpeg4v1,msmpeg4v2,msmpeg4v3,msnsiren,msp2,msrle,mss1,mss2,msvideo1,mszh,mts2,mv30,mvc1,mvc2,mvdv,mvha,mwsc,mxpeg,nellymoser,nuv,on2avc,opus,paf_audio,paf_video,pam,pbm,pcm_alaw,pcm_bluray,pcm_dvd,pcm_f16le,pcm_f24le,pcm_f32be,pcm_f32le,pcm_f64be,pcm_f64le,pcm_lxf,pcm_mulaw,pcm_s16be,pcm_s16be_planar,pcm_s16le,pcm_s16le_planar,pcm_s24be,pcm_s24daud,pcm_s24le,pcm_s24le_planar,pcm_s32be,pcm_s32le,pcm_s32le_planar,pcm_s64be,pcm_s64le,pcm_s8,pcm_s8_planar,pcm_sga,pcm_u16be,pcm_u16le,pcm_u24be,pcm_u24le,pcm_u32be,pcm_u32le,pcm_u8,pcm_vidc,pcx,pfm,pgm,pgmyuv,pgssub,pgx,phm,photocd,pictor,pjs,png,ppm,prores,prosumer,psd,ptx,qcelp,qdm2,qdmc,qdraw,qoa,qoi,qpeg,qtrle,r10k,r210,ra_144,ra_288,rasc,rawvideo,realtext,rka,rl2,roq,roq_dpcm,rpza,rscc,rv10,rv20,s302m,sami,sanm,sbc,screenpresso,sdx2_dpcm,sgi,sgirle,shorten,simbiosis_imx,sipr,siren,smackaud,smacker,smc,smvjpeg,snow,sol_dpcm,sonic,sp5x,speedhq,speex,srgc,srt,ssa,stl,subrip,subviewer,subviewer1,sunrast,svq1,svq3,tak,targa,targa_y216,tdsc,text,theora,thp,tiertexseqvideo,tiff,tmv,truehd,truemotion1,truemotion2,truemotion2rt,truespeech,tscc,tscc2,tta,twinvq,txd,ulti,utvideo,v210,v210x,v308,v408,v410,vb,vble,vcr1,vmdaudio,vmdvideo,vmnc,vnull,vorbis,vp3,vp4,vp5,vp6,vp6a,vp6f,vp7,vp8,vp8_qsv,vp8_v4l2m2m,vp9,vp9_qsv,vp9_v4l2m2m,vplayer,vqa,vqc,wady_dpcm,wavarc,wavpack,wbmp,wcmv,webp,webvtt,wmav1,wmav2,wmavoice,wmv1,wmv2,wnv1,wrapped_avframe,ws_snd1,xan_dpcm,xan_wc3,xan_wc4,xbin,xbm,xface,xl,xpm,xsub,xwd,y41p,ylc,yop,yuv4,zero12v,zerocodec,zlib,zmbv,'"
+  ],
+  "config": {
+    "project": {
+      "name": "Tuning Mode Analysis for SVT-AV1",
+      "output_container": "ivf"
+    },
+    "tools": {
+      "encoder": "/home/ge63sycy/SVT-AV1/Bin/Release/SvtAv1EncApp",
+      "ffprobe": "ffprobe",
+      "ffmpeg": "ffmpeg"
+    },
+    "encoder": {
+      "tunes": [
+        {
+          "name": "VQ",
+          "value": 0
+        },
+        {
+          "name": "PSNR",
+          "value": 1
+        },
+        {
+          "name": "SSIM",
+          "value": 2
+        },
+        {
+          "name": "MS_SSIM",
+          "value": 4
+        },
+        {
+          "name": "VMAF",
+          "value": 5
+        }
+      ],
+      "presets": [
+        1,
+        10
+      ],
+      "crfs": [
+        18,
+        26,
+        35,
+        44,
+        52,
+        60
+      ],
+      "lp": 0
+    },
+    "measurement": {
+      "memory_sample_interval_seconds": 0.1,
+      "confidence_level": 0.95,
+      "resume": true
+    },
+    "profiles": {
+      "meeting": {
+        "selection": {
+          "mode": "resolution_balanced",
+          "per_resolution_tier": 7
+        },
+        "tunes": [
+          "VQ",
+          "PSNR",
+          "SSIM",
+          "MS_SSIM",
+          "VMAF"
+        ],
+        "presets": [
+          1,
+          10
+        ],
+        "crfs": [
+          18,
+          26,
+          35,
+          44,
+          52,
+          60
+        ],
+        "repetitions": 1,
+        "warmup_runs": 0,
+        "keep_all_bitstreams": true
+      },
+      "confidence": {
+        "selection": {
+          "mode": "prefer_1080p",
+          "max_videos": 1
+        },
+        "tunes": [
+          "PSNR"
+        ],
+        "presets": [
+          1,
+          10
+        ],
+        "crfs": [
+          26,
+          35,
+          44
+        ],
+        "repetitions": 5,
+        "warmup_runs": 1,
+        "keep_all_bitstreams": false
+      },
+      "full": {
+        "selection": {
+          "mode": "all"
+        },
+        "tunes": [
+          "VQ",
+          "PSNR",
+          "SSIM",
+          "MS_SSIM",
+          "VMAF"
+        ],
+        "presets": [
+          1,
+          10
+        ],
+        "crfs": [
+          18,
+          26,
+          35,
+          44,
+          52,
+          60
+        ],
+        "repetitions": 1,
+        "warmup_runs": 0,
+        "keep_all_bitstreams": true
+      }
+    },
+    "inputs": {
+      "encoding_runs": "results/raw/encoding_runs_wp2_recovered.csv"
+    },
+    "metrics": {
+      "vmaf_model": "vmaf_v0.6.1",
+      "vmaf_model_4k": null,
+      "features": [
+        "psnr",
+        "float_ssim",
+        "float_ms_ssim"
+      ],
+      "threads": 4,
+      "scale_flags": "bicubic",
+      "pix_fmt": "ref"
+    },
+    "bd_rate": {
+      "baseline_tune": "VQ",
+      "metrics": [
+        "vmaf_mean",
+        "psnr_yuv_mean"
+      ],
+      "min_points": 3
+    },
+    "validate": {
+      "monotonic_tol_vmaf": 0.5
+    },
+    "selftest": {
+      "frames": 30,
+      "identity": {
+        "psnr_min": 40,
+        "ssim_min": 0.99,
+        "vmaf_min": 90
+      },
+      "noise_levels": [
+        5,
+        10,
+        20
+      ],
+      "blur_sigmas": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "resize_factors": [
+        1.2,
+        1.5,
+        2.0
+      ],
+      "crosscheck": {
+        "psnr_db": 0.5,
+        "ssim_abs": 0.05
+      },
+      "invariance": {
+        "psnr_db": 2.0,
+        "vmaf": 10.0
+      },
+      "scale_flags": [
+        "bicubic",
+        "bilinear",
+        "lanczos"
+      ],
+      "scale_spread": {
+        "vmaf": 5.0,
+        "psnr_db": 2.0
+      }
+    },
+    "plots": {
+      "dpi": 150,
+      "metrics": [
+        "vmaf_mean",
+        "psnr_yuv_mean",
+        "ssim_mean"
+      ]
+    }
+  }
+}

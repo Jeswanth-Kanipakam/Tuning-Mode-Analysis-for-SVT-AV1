@@ -1,0 +1,35 @@
+test,metric,value,expected,pass
+identity,psnr_y_mean,60.0,>=40,True
+identity,ssim_mean,1.0,>=0.99,True
+identity,ms_ssim_mean,1.0,>=0.99,True
+identity,vmaf_mean,98.947,>=90,True
+monotonic_noise,psnr_y_mean,"[45.1057, 38.8847, 32.914]",strictly decreasing,True
+monotonic_noise,psnr_yuv_mean,"[45.0821, 38.8494, 32.8779]",strictly decreasing,True
+monotonic_noise,ssim_mean,"[0.9989, 0.9954, 0.982]",strictly decreasing,True
+monotonic_noise,ms_ssim_mean,"[0.9983, 0.9933, 0.9753]",strictly decreasing,True
+monotonic_noise,vmaf_mean,"[98.1495, 96.6079, 92.5684]",strictly decreasing,True
+monotonic_blur,psnr_y_mean,"[39.9628, 31.998, 27.0366]",strictly decreasing,True
+monotonic_blur,psnr_yuv_mean,"[44.9721, 37.0059, 31.843]",strictly decreasing,True
+monotonic_blur,ssim_mean,"[0.9987, 0.9879, 0.9362]",strictly decreasing,True
+monotonic_blur,ms_ssim_mean,"[0.9983, 0.9861, 0.9382]",strictly decreasing,True
+monotonic_blur,vmaf_mean,"[88.6243, 68.2399, 30.2077]",strictly decreasing,True
+monotonic_resize,psnr_y_mean,"[38.8621, 34.6235, 30.6459]",strictly decreasing,True
+monotonic_resize,psnr_yuv_mean,"[43.1137, 39.3243, 35.7224]",strictly decreasing,True
+monotonic_resize,ssim_mean,"[0.9995, 0.9984, 0.9926]",strictly decreasing,True
+monotonic_resize,ms_ssim_mean,"[0.9988, 0.996, 0.9855]",strictly decreasing,True
+monotonic_resize,vmaf_mean,"[95.2445, 91.1366, 81.7118]",strictly decreasing,True
+crosscheck_noise_10,psnr_y |libvmaf-native| dB,0.0007,<=0.5,True
+crosscheck_noise_10,ssim_y |libvmaf-native| @256p,0.0008,<=0.05,True
+info_ssim_fullres_noise_10,ssim_y libvmaf vs native @full-res,0.9954 vs 0.9525,info: libvmaf SSIM is computed on a downsampled frame,info
+crosscheck_blur_1.0,psnr_y |libvmaf-native| dB,0.0003,<=0.5,True
+crosscheck_blur_1.0,ssim_y |libvmaf-native| @256p,0.0017,<=0.05,True
+info_ssim_fullres_blur_1.0,ssim_y libvmaf vs native @full-res,0.9879 vs 0.9453,info: libvmaf SSIM is computed on a downsampled frame,info
+bit_depth_dist,psnr_y diff dB,0.0,<=2.0,True
+bit_depth_dist,vmaf diff,0.0,<=10.0,True
+chroma_dist,psnr_y diff dB,0.0,<=2.0,True
+chroma_dist,vmaf diff,0.0,<=10.0,True
+chroma_ref,psnr_y diff dB,0.0,<=2.0,True
+chroma_ref,vmaf diff,0.0,<=10.0,True
+scale_filter_spread,vmaf_mean,19.249,<=5.0 (warn only),warn
+scale_filter_spread,psnr_y_mean,1.848,<=2.0 (warn only),True
+frame_count_guard,frames_scored,25,"25 (<30, run() flags mismatch)",True
