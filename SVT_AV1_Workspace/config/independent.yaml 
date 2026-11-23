@@ -1,0 +1,47 @@
+# Config for scripts/wp2_independent.py (independent quality metrics: XPSNR, LPIPS, DISTS, ColorVideoVDP)
+
+tools:_
+  ffmpeg: ffmpeg          # XPSNR needs ffmpeg 7.0 or newer; the frame-based metrics decode frames with it
+  ffprobe: ffprobe
+
+inputs:
+  encoding_runs: results/raw/encoding_runs.csv    # produced by WP1
+  quality_runs: results/raw/quality_runs.csv      # optional: WP2 scores, shown side by side in the report
+
+measurement:
+  resume: true            # skip values that were already scored
+
+normalisation:            # same policy as wp2.py, so all metrics see identical inputs
+  pix_fmt: ref            # "ref" = convert both streams to the reference's pixel format
+  scale_flags: bicubic    # used if the encoded resolution differs from the original
+
+independent:
+  metrics: [xpsnr, lpips, dists, cvvdp]
+  # xpsnr : needs only ffmpeg                                          (higher = better)
+  # lpips : pip install torch torchvision lpips                        (lower  = better)
+  # dists : pip install torch torchvision DISTS-pytorch                (lower  = better)
+  # cvvdp : pip install cvvdp  (ColorVideoVDP, JOD scale, 10 = no difference)   (higher = better)
+  frame_metrics_every_nth_frame: 10   # LPIPS and DISTS are slow, so they score every Nth frame
+  lpips_net: alex           # alex (fast) or vgg
+  lpips_device: auto        # auto | cpu | cuda
+  dists_device: auto
+  cvvdp_display: standard_fhd   # viewing conditions; use the SAME for the whole study (standard_4k for 4K content)
+  cvvdp_device: auto            # auto | cpu | cuda | cuda:0
+  cvvdp_max_frames: 30          # ColorVideoVDP compares the first N frames (0 = whole video; slow on a CPU)
+  cvvdp_resize: null            # null, or bicubic / bilinear / nearest / area to resize both videos to the display
+
+bd_rate:
+  baseline_tune: PSNR     # tune used as the anchor (case does not matter)
+  metrics: [xpsnr_mean, lpips_mean, dists_mean, cvvdp_jod, vmaf_mean, psnr_yuv_mean, ssim_mean, ms_ssim_mean]
+  min_points: 3
+  crf_min: null           # optional sensitivity check: only use CRFs >= this (e.g. 26)
+  crf_max: null           # optional: only use CRFs <= this (e.g. 52)
+
+plots:
+  dpi: 150
+
+selftest:
+  frames: 30
+  noise_levels: [5, 15, 30]
+  blur_sigmas: [1, 2, 4]
+  resize_factors: [1.5, 2, 4]
